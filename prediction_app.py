@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-import joblib,os
+import joblib
 
 app = FastAPI()
 
