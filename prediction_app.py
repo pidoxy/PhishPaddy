@@ -1,39 +1,25 @@
-#importing required libraries
+import uvicorn
+from fastapi import FastAPI
+import joblib,os
 
-from flask import Flask, request, render_template
-import numpy as np
-import pandas as pd
-from sklearn import metrics 
-import warnings
-import pickle
-warnings.filterwarnings('ignore')
-from feature import FeatureExtraction
+app = FastAPI()
 
-file = open("phishing.pkl","rb")
-gbc = pickle.load(file)
-file.close()
+#pkl
+phish_model = open('phishing.pkl','rb')
+phish_model_ls = joblib.load(phish_model)
 
+# ML Aspect
+@app.get('/predict/{feature}')
+async def predict(features):
+	X_predict = []
+	X_predict.append(str(features))
+	y_Predict = phish_model_ls.predict(X_predict)
+	if y_Predict == 'bad':
+		result = "This is a Phishing Site"
+	else:
+		result = "This is not a Phishing Site"
 
-app = Flask(__name__)
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-
-        url = request.form["url"]
-        obj = FeatureExtraction(url)
-        x = np.array(obj.getFeaturesList()).reshape(1,30) 
-
-        y_pred =gbc.predict(x)[0]
-        #1 is safe       
-        #-1 is unsafe
-        y_pro_phishing = gbc.predict_proba(x)[0,0]
-        y_pro_non_phishing = gbc.predict_proba(x)[0,1]
-        # if(y_pred ==1 ):
-        pred = "It is {0:.2f} % safe to go ".format(y_pro_phishing*100)
-        return render_template('index.html',xx =round(y_pro_non_phishing,2),url=url )
-    return render_template("index.html", xx =-1)
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
+	return (features, result)
+if __name__ == '__main__':
+	uvicorn.run(app,host="127.0.0.1",port=8000)
+    
